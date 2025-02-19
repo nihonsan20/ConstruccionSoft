@@ -1032,27 +1032,26 @@ COMMIT;
 
 SET @orderID = 10252; 
 
-SELECT  
+set @orderID = 10252; 
+SELECT 									-- Empezamos a renombrar cada tabla.contenido para agregarle un nombre especifico
     Orders.OrderID AS FacturaID, 
-    Orders.OrderDate AS FechaPedido,  
+    Orders.OrderDate AS FechaPedido,
     Customers.CustomerName AS Cliente,
     Customers.ContactName AS ContactoCliente,
-    Employees.FirstName AS Vendedor,
+    Employees.FirstName  AS Vendedor,
     Employees.EmployeeID AS IDvendedor,
     Shippers.ShipperName AS Transportista,
     Products.ProductName AS Producto,
     OrderDetails.Quantity AS Cantidad,
     Products.Price AS PrecioUnitario,
     (OrderDetails.Quantity * Products.Price) AS TotalProducto,
-    (SELECT SUM(od.Quantity * p.Price)  
-     FROM OrderDetails od  
-     JOIN Products p ON od.ProductID = p.ProductID  
-     WHERE od.OrderID = Orders.OrderID) AS TotalFactura  -- Se usa una subconsulta para obtener el total
-FROM Orders  
+    (SUM(OrderDetails.Quantity * Products.Price) OVER (PARTITION BY Orders.OrderID)) AS TotalFactura -- Esta operacion hace la suma de todos Total producto y los convierte a un TotalFactura
+FROM Orders													-- llamamos a las llaves primarias de cada tabla usando una relación entre sus columnas
 JOIN Customers ON Orders.CustomerID = Customers.CustomerID  
-JOIN Employees ON Orders.EmployeeID = Employees.EmployeeID  
-JOIN Shippers ON Orders.ShipperID = Shippers.ShipperID  
-JOIN OrderDetails ON Orders.OrderID = OrderDetails.OrderID  
-JOIN Products ON OrderDetails.ProductID = Products.ProductID  
-WHERE Orders.OrderID = @orderID;
+JOIN Employees ON Orders.EmployeeID = Employees.EmployeeID
+JOIN Shippers ON Orders.ShipperID = Shippers.ShipperID
+JOIN OrderDetails ON Orders.OrderID = OrderDetails.OrderID
+JOIN Products ON OrderDetails.ProductID = Products.ProductID
+WHERE Orders.OrderID = @orderID;  -- Esto lo hice para hacer mas dinamico la busqueda de orden
+
 
